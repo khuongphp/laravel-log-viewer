@@ -7,7 +7,7 @@ Laravel 5 log viewer
 
 TL;DR
 -----
-The best (IMO) Log Viewer for Laravel 5 (compatible with 4.2 too) and Lumen. **Install with composer, create a route to `LogViewerController`**. No public assets, no vendor routes, works with and/or without log rotate. Inspired by Micheal Mand's [Laravel 4 log viewer](https://github.com/mikemand/logviewer) (works only with laravel 4.1)
+Log Viewer for Laravel 5 (compatible with 4.2 too) and Lumen. **Install with composer, create a route to `LogViewerController`**. No public assets, no vendor routes, works with and/or without log rotate. Inspired by Micheal Mand's [Laravel 4 log viewer](https://github.com/mikemand/logviewer) (works only with laravel 4.1)
 
 What ?
 ------
@@ -27,12 +27,20 @@ Add Service Provider to `config/app.php` in `providers` section
 Rap2hpoutre\LaravelLogViewer\LaravelLogViewerServiceProvider::class,
 ```
 
-Add a route in `app/Http/routes.php` (or choose another route): 
+Add a route in your web routes file:
 ```php 
 Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 ```
 
 Go to `http://myapp/logs` or some other route
+
+**Optionally** publish `log.blade.php` into `/resources/views/vendor/laravel-log-viewer/` for view customization:
+
+```
+php artisan vendor:publish \
+  --provider="Rap2hpoutre\LaravelLogViewer\LaravelLogViewerServiceProvider" \
+  --tag=views
+``` 
 
 Install (Lumen)
 ---------------
@@ -42,14 +50,9 @@ Install via composer
 composer require rap2hpoutre/laravel-log-viewer
 ```
 
-Enable facades by uncommenting this line in `bootstrap/app.php`:
-```php
-$app->withFacades();
-```
-
 Add the following in `bootstrap/app.php`:
 ```php
-$app->register(Rap2hpoutre\LaravelLogViewer\LaravelLogViewerServiceProvider::class);
+$app->register(\Rap2hpoutre\LaravelLogViewer\LaravelLogViewerServiceProvider::class);
 ```
 
 Explicitly set the namespace in `app/Http/routes.php`:
@@ -58,3 +61,9 @@ $app->group(['namespace' => '\Rap2hpoutre\LaravelLogViewer'], function() use ($a
     $app->get('logs', 'LogViewerController@index');
 });
 ```
+
+Troubleshooting
+---------------
+
+If you got a `InvalidArgumentException in FileViewFinder.php` error, it may be a problem with config caching. Double check installation, then run `php artisan config:clear`.
+

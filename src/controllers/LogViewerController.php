@@ -7,35 +7,57 @@ if (class_exists("\\Illuminate\\Routing\\Controller")) {
     class BaseController extends \Laravel\Lumen\Routing\Controller {}
 }
 
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Response;
-
 class LogViewerController extends BaseController
 {
+    protected $request;
+
+    public function __construct ()
+    {
+        $this->request = app('request');
+    }
 
     public function index()
     {
 
-        if (Request::input('l')) {
-            LaravelLogViewer::setFile(base64_decode(Request::input('l')));
+        if ($this->request->input('l')) {
+            LaravelLogViewer::setFile(base64_decode($this->request->input('l')));
         }
 
-        if (Request::input('dl')) {
-            return Response::download(LaravelLogViewer::pathToLogFile(base64_decode(Request::input('dl'))));
-        } elseif (Request::has('del')) {
-            File::delete(LaravelLogViewer::pathToLogFile(base64_decode(Request::input('del'))));
-            return Redirect::to(Request::url());
+        if ($this->request->input('dl')) {
+            return $this->download(LaravelLogViewer::pathToLogFile(base64_decode($this->request->input('dl'))));
+        } elseif ($this->request->has('del')) {
+            app('files')->delete(LaravelLogViewer::pathToLogFile(base64_decode($this->request->input('del'))));
+            return $this->redirect($this->request->url());
+        } elseif ($this->request->has('delall')) {
+            foreach(LaravelLogViewer::getFiles(true) as $file){
+                app('files')->delete(LaravelLogViewer::pathToLogFile($file));
+            }
+            return $this->redirect($this->request->url());
         }
 
-        $logs = LaravelLogViewer::all();
-
-        return View::make('laravel-log-viewer::log', [
-            'logs' => $logs,
+        return app('view')->make('laravel-log-viewer::log', [
+            'logs' => LaravelLogViewer::all(),
             'files' => LaravelLogViewer::getFiles(true),
             'current_file' => LaravelLogViewer::getFileName()
         ]);
+    }
+
+    private function redirect($to)
+    {
+        if (function_exists('redirect')) {
+            return redirect($to);
+        }
+
+        return app('redirect')->to($to);
+    }
+
+    private function download($data)
+    {
+        if (function_exists('response')) {
+            return response()->download($data);
+        }
+
+        // For laravel 4.2
+        return app('\Illuminate\Support\Facades\Response')->download($data);
     }
 }
